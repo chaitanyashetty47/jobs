@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Certificate {
+  id       Int      @id @default(autoincrement())
+  courseId Int
+  issuedAt DateTime @default(now())
+  UsersId  Int
+  Users    Users    @relation(fields: [UsersId], references: [id])
+  Course   Course   @relation(fields: [courseId], references: [id])
+}
+
+model Content {
+  id               Int             @id @default(autoincrement())
+  type             String          @default("folder")
+  title            String
+  hidden           Boolean         @default(false)
+  description      String?
+  thumbnail        String?
+  parentId         Int?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime
+  notionMetadataId Int?
+  Content          Content?        @relation("ContentToContent", fields: [parentId], references: [id])
+  other_Content    Content[]       @relation("ContentToContent")
+  CourseContent    CourseContent[]
+}
+
+model Course {
+  id              Int              @id @default(autoincrement())
+  title           String
+  imageUrl        String
+  description     String
+  openToEveryone  Boolean          @default(false)
+  slug            String           @unique
+  discordOauthUrl String           @default("")
+  certIssued      Boolean          @default(false)
+  createdById     Int
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime
+  Certificate     Certificate[]
+  Users           Users            @relation(fields: [createdById], references: [id])
+  CourseContent   CourseContent[]
+  Review          Review[]
+  UsersPurchases  UsersPurchases[]
+}
+
+model CourseContent {
+  courseId  Int
+  contentId Int
+  Content   Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  Course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, contentId])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String?
+  userId    Int
+  courseId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Course    Course   @relation(fields: [courseId], references: [id])
+  Users     Users    @relation(fields: [userId], references: [id])
+}
+
+model Users {
+  id             Int              @id @default(autoincrement())
+  name           String
+  email          String           @unique
+  supabaseId     String           @unique
+  role           Role             @default(USER)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  Certificate    Certificate[]
+  Course         Course[]
+  Review         Review[]
+  UsersPurchases UsersPurchases[]
+}
+
+model UsersPurchases {
+  UsersId     Int
+  courseId    Int
+  purchasedAt DateTime @default(now())
+  Users       Users    @relation(fields: [UsersId], references: [id])
+  Course      Course   @relation(fields: [courseId], references: [id])
+
+  @@id([UsersId, courseId])
+}
+
+
+model Userss {
+
+  id Int @id @default(autoincrement())
+  name String
+  email String
+  role           Role             @default(USER)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+
+
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum JobType {
+  FULLTIME
+  PARTTIME
+  INTERNSHIP
+  CONTRACT
+}
+
+enum WorkMode {
+  REMOTE
+  HYBRID
+  OFFICE
+}
